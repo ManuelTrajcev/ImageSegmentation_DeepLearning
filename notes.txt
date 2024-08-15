@@ -1,0 +1,2 @@
+Convolution -
+Same convolution - input width x height - same as output
