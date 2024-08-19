@@ -1,2 +1,5 @@
-Convolution -
-Same convolution - input width x height - same as output
+Model:
+    Convolution -
+    Same convolution - input width x height - same as output
+
+Dataset:
