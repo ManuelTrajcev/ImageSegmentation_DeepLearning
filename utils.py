@@ -60,15 +60,17 @@ def check_accuracy(loader, model, device="cuda"):
     num_correct = 0
     num_pixels = 0
     dice_score = 0      #TODO explenation
-    model.eval()
     with torch.no_grad():
         for x, y in loader:
-            x, y = x.to(device), y.to(device).unsqueeze(1)  #unsqueze - bcs it's grayscale
-            preds = torch.sigmoid(model(x))  # predictions
-            pred = (pred > 0.5).float()
-            num_correct += (pred == y).sum()
-            num_pixels += torch.numel(pred)
-            dice_score += (2 * (preds * y).sum()) / ((preds+y).sum() + 1e-8)
+            x = x.to(device)
+            y = y.to(device).unsqueeze(1)   #unsqueze - bcs it's grayscale
+            preds = torch.sigmoid(model(x))
+            preds = (preds > 0.5).float()
+            num_correct += (preds == y).sum()
+            num_pixels += torch.numel(preds)
+            dice_score += (2 * (preds * y).sum()) / (
+                    (preds + y).sum() + 1e-8
+            )
     print(f"Number of correct: {num_correct}/{num_pixels} , accuracy: {num_correct / num_pixels * 100:.2f}")
     print(f"Dice score: {dice_score / len(loader):.2f}")
 

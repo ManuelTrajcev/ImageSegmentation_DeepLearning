@@ -23,7 +23,7 @@ NUM_WORKERS = 2
 IMAGE_HEIGHT = 160  # 1280 original size
 IMAGE_WIDTH = 240  # 1918 original size
 PIN_MEMORY = True
-LOAD_MODEL = False      #True - otkako se istrenira modelot
+LOAD_MODEL = False  # True - otkako se istrenira modelot
 TRAIN_IMG_DIR = "data/train_images/"
 TRAIN_MASK_DIR = "data/train_masks/"
 VAL_IMG_DIR = "data/val_images/"
@@ -32,6 +32,7 @@ VAL_MASK_DIR = "data/val_masks/"
 
 def train_fn(loader, model, optimizer, loss_fn, scaler):
     loop = tqdm(loader)
+
     for batch_idx, (data, targets) in enumerate(loop):
         data = data.to(device=DEVICE)
         targets = targets.float().unsqueeze(1).to(device=DEVICE)
@@ -59,7 +60,7 @@ def main():
             A.Normalize(
                 mean=[0.0, 0.0, 0.0],
                 std=[1.0, 1.0, 1.0],
-                max_pixel_value=255.0,  # to get value between 0 and 1
+                max_pixel_value=255.0,
             ),
             ToTensorV2(),
         ],
@@ -86,6 +87,7 @@ def main():
         TRAIN_MASK_DIR,
         VAL_IMG_DIR,
         VAL_MASK_DIR,
+        BATCH_SIZE,
         train_transform,
         val_transforms,
         NUM_WORKERS,
@@ -96,13 +98,13 @@ def main():
         load_checkpoint(torch.load("my_checkpoint.pth.tar"), model)
 
     # check_accuracy(val_loader, model, device=DEVICE)
-    # scaler = torch.cuda.amp.GradScaler()
 
     scaler = torch.cuda.amp.GradScaler()
+
     for epoch in range(NUM_EPOCHS):
         train_fn(train_loader, model, optimizer, loss_fn, scaler)
 
-        #save model, print examples, check accuracy
+        # save model, print examples, check accuracy
         checkpoint = {
             "state_dict": model.state_dict(),
             "optimizer": optimizer.state_dict(),
@@ -115,5 +117,6 @@ def main():
             val_loader, model, folder="saved_images/", device=DEVICE
         )
 
-if __name__ == "__main":
+
+if __name__ == "__main__":
     main()
