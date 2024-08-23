@@ -2,7 +2,7 @@ import os
 from PIL import Image
 from torch.utils.data import Dataset
 import numpy as np
-
+from labels import encode_segmap
 class CarvanaDataset(Dataset):
     def __init__(self, image_dir, mask_dir, transform=None):
         self.image_dir = image_dir
@@ -18,8 +18,12 @@ class CarvanaDataset(Dataset):
         mask_path = os.path.join(self.mask_dir, self.images[index].replace("leftImg8bit.png", "gtFine_color.png"))
 
         image = np.array(Image.open(img_path).convert("RGB"))
-        mask = np.array(Image.open(mask_path).convert("L"), dtype=np.float32)
-        mask[mask == 255.0] = 1.0
+        mask = np.array(Image.open(mask_path), dtype=np.int64)
+        # mask[mask == 255.0] = 1.0
+        mask = encode_segmap(mask)
+
+
+
         if self.transform is not None:
             augmentations = self.transform(image=image, mask=mask)
             image = augmentations["image"]

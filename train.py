@@ -12,6 +12,9 @@ from utils import (
     get_loaders,
     check_accuracy,
     save_predictions_as_imgs,
+    encode_segmap,
+    decode_segmap,
+    ignore_index
 )
 
 # Hyperparameters
@@ -20,8 +23,8 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 16
 NUM_EPOCHS = 3
 NUM_WORKERS = 2
-IMAGE_HEIGHT = 160  # 1280 original size
-IMAGE_WIDTH = 240  # 1918 original size
+IMAGE_HEIGHT = 40  # 1280 original size
+IMAGE_WIDTH = 60  # 1918 original size
 PIN_MEMORY = True
 LOAD_MODEL = False  # True - otkako se istrenira modelot
 TRAIN_IMG_DIR = "data/train_images/"
@@ -35,8 +38,10 @@ def train_fn(loader, model, optimizer, loss_fn, scaler):
 
     for batch_idx, (data, targets) in enumerate(loop):
         data = data.to(device=DEVICE)
-        targets = targets.float().unsqueeze(1).to(device=DEVICE)
-
+        targets = targets.long().squeeze(1).to(device=DEVICE)  # --> long
+        targets = encode_segmap(targets)
+        if targets.dim() == 4:
+            targets = torch.argmax(targets, dim=-1)
         # forward
         with torch.cuda.amp.autocast():
             predictions = model(data)
@@ -78,8 +83,8 @@ def main():
         ],
     )
 
-    model = UNET(in_channels=3, out_channels=1).to(DEVICE)  # out_channels >> --> multiclass segmentation
-    loss_fn = nn.BCEWithLogitsLoss()  # cross entropy loss --> multiclass segmentation
+    model = UNET(in_channels=3, out_channels=20).to(DEVICE)  # out_channels >> --> multiclass segmentation
+    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=ignore_index)  # cross entropy loss --> multiclass segmentation
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
     train_loader, val_loader = get_loaders(
@@ -111,7 +116,7 @@ def main():
         }
         save_checkpoint(checkpoint)
 
-        check_accuracy(val_loader, model, device=DEVICE)
+        #check_accuracy(val_loader, model, device=DEVICE)
 
         save_predictions_as_imgs(
             val_loader, model, folder="saved_images/", device=DEVICE
